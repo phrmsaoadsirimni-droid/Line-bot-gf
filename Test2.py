@@ -8,7 +8,7 @@ import schedule
 CHANNEL_ACCESS_TOKEN = (
     "yXkQXeNfyQZDof2jsB53JG4z9obcpj6VljUh37gDgZ2FF7zFmPU3aX9tjpmI92ON0OJEJ4L4TtP9UI8PkdHVq8xZnz0DZRt5pUdYPHfZTcok0KLaZab8Pa1F1bG5FuVUQooygOAF81eTOObbdW5HJQdB04t89/1O/w1cDnyilFU="
 )
-GIRLFRIEND_USER_ID = "Ua463fdfade2cc5da39b25fed065c881a","Uaaefed0b9106cc564deb5a881d317bcf"
+GIRLFRIEND_USER_ID = "Uaaefed0b9106cc564deb5a881d317bcf"
 HEADERS = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {CHANNEL_ACCESS_TOKEN}",
