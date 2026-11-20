@@ -1,21 +1,20 @@
-from datetime import datetime
+import os
 import random
-import time
+from flask import Flask, jsonify, request
 import requests
-import schedule
 
-# --- ตั้งค่า Token และ User ID ของแฟน ---
+app = Flask(__name__)
+
 CHANNEL_ACCESS_TOKEN = (
     "yXkQXeNfyQZDof2jsB53JG4z9obcpj6VljUh37gDgZ2FF7zFmPU3aX9tjpmI92ON0OJEJ4L4TtP9UI8PkdHVq8xZnz0DZRt5pUdYPHfZTcok0KLaZab8Pa1F1bG5FuVUQooygOAF81eTOObbdW5HJQdB04t89/1O/w1cDnyilFU="
 )
-GIRLFRIEND_USER_ID = "Uaaefed0b9106cc564deb5a881d317bcf"
+
 HEADERS = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {CHANNEL_ACCESS_TOKEN}",
 }
 
-# --- รายการข้อความสำหรับสุ่มส่งหาแฟน ---
-MESSAGES = [
+REPLY_MESSAGES = [
     "คิดถึงนะ ทำอะไรอยู่เอ่ย?",
     "อย่าลืมกินข้าวให้ตรงเวลานะ เป็นห่วง",
     "สู้ๆ นะคนเก่ง เค้าเป็นกำลังใจให้เสมอ",
@@ -24,35 +23,40 @@ MESSAGES = [
 ]
 
 
-def send_message_to_gf():
-  # สุ่มเลือกข้อความจากรายการ
-  text_to_send = random.choice(MESSAGES)
-
-  payload = {
-      "to": GIRLFRIEND_USER_ID,
-      "messages": [{"type": "text", "text": text_to_send}],
-  }
-
-  response = requests.post(
-      "https://api.line.me/v2/bot/message/push", headers=HEADERS, json=payload
-  )
-
-  now = datetime.now().strftime("%H:%M:%S")
-  if response.status_code == 200:
-    print(f"[{now}] ส่งข้อความหาแฟนสำเร็จ: '{text_to_send}'")
-  else:
-    print(
-        f"[{now}] ส่งไม่สำเร็จ (Status: {response.status_code}):"
-        f" {response.text}"
-    )
+@app.route("/", methods=["GET"])
+def home():
+  return "LINE Bot is running!"
 
 
-# --- ตั้งเวลาส่งข้อความ (เช่น ส่งทุกๆ 10 วินาที หรือปรับตามต้องการ) ---
-schedule.every(10).seconds.do(send_message_to_gf)
+@app.route("/callback", methods=["POST"])
+def callback():
+  body = request.get_json(silent=True) or {}
+  events = body.get("events", [])
 
-print("บอทเริ่มส่งข้อความหาแฟนแบบอัตโนมัติแล้ว...")
+  for event in events:
+    if event.get("type") == "message":
+      reply_token = event.get("replyToken")
+      user_id = event.get("source", {}).get("userId")
+      incoming_text = event.get("message", {}).get("text", "")
 
-# ลูปเพื่อให้โปรแกรมรันทำงานเบื้องหลังตลอดเวลา
-while True:
-  schedule.run_pending()
-  time.sleep(1)
+      print(f"รับข้อความจาก {user_id}: {incoming_text}")
+
+      if reply_token:
+        reply_text = random.choice(REPLY_MESSAGES)
+        payload = {
+            "replyToken": reply_token,
+            "messages": [{"type": "text", "text": reply_text}],
+        }
+        res = requests.post(
+            "https://api.line.me/v2/bot/message/reply",
+            headers=HEADERS,
+            json=payload,
+        )
+        print(f"สถานะตอบกลับ: {res.status_code} {res.text}")
+
+  return jsonify({"status": "ok"}), 200
+
+
+if __name__ == "__main__":
+  port = int(os.environ.get("PORT", 5000))
+  app.run(host="0.0.0.0", port=port)
